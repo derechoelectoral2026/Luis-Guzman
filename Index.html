@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Entrenamiento INE</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', sans-serif; display: flex; height: 100vh; background: #f4f7f9; overflow: hidden; }
+
+        /* Sidebar */
+        .sidebar { width: 260px; background: #2c3e50; color: white; display: flex; flex-direction: column; flex-shrink: 0; }
+        .sidebar-header { padding: 25px; background: #1a252f; text-align: center; border-bottom: 1px solid #34495e; }
+        .sidebar-header h2 { font-size: 1.1rem; color: #e91e8c; letter-spacing: 1px; }
+        .nav-menu { padding: 15px; flex: 1; overflow-y: auto; }
+        .nav-btn { width: 100%; padding: 12px; margin-bottom: 5px; background: transparent; border: none; color: #bdc3c7; text-align: left; cursor: pointer; border-radius: 5px; display: flex; align-items: center; gap: 10px; transition: 0.2s; }
+        .nav-btn:hover { background: #34495e; color: white; }
+        .nav-btn.active { background: #e91e8c; color: white; }
+
+        /* Main Content */
+        .main-content { flex: 1; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+        #testFrame { width: 100%; height: 100%; border: none; display: none; background: white; }
+
+        /* Dashboard Home */
+        .dashboard-home { padding: 40px; overflow-y: auto; height: 100%; }
+        .welcome-header { margin-bottom: 40px; text-align: center; }
+        .welcome-header h1 { font-size: 2.2rem; color: #2c3e50; }
+
+        /* Estructura de Islas (Acordeón) */
+        .island-section { margin-bottom: 20px; background: white; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #eee; }
+        .island-header { padding: 20px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: background 0.3s; }
+        .island-header:hover { background: #fcfcfc; }
+        .island-title { font-size: 1.2rem; font-weight: 700; color: #c2185b; display: flex; align-items: center; gap: 10px; }
+        
+        .island-content { display: none; padding: 20px; background: #fafafa; border-top: 1px solid #eee; animation: fadeIn 0.3s ease; }
+        .island-section.active .island-content { display: block; }
+        .island-section.active .island-header { background: #fdf2f7; }
+
+        /* Grid de Módulos */
+        .grid-islas { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+        .card-test { background: white; border-radius: 10px; padding: 20px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.03); transition: 0.3s; cursor: pointer; border: 1px solid #eee; }
+        .card-test:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(194, 24, 91, 0.1); border-color: #e91e8c; }
+        .card-test .icon { font-size: 1.8rem; margin-bottom: 10px; display: block; }
+        .card-test h3 { font-size: 0.95rem; color: #34495e; margin-bottom: 4px; }
+        .card-test span { font-size: 0.7rem; color: #95a5a6; text-transform: uppercase; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .back-btn { position: absolute; top: 15px; right: 25px; padding: 10px 20px; background: #2c3e50; color: white; border: none; border-radius: 25px; cursor: pointer; z-index: 100; display: none; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>CENTRO DE MANDO</h2>
+            <p style="font-size: 0.7rem; color: #7f8c8d;">SISTEMA SPEN v2.0</p>
+        </div>
+        <div class="nav-menu">
+            <button class="nav-btn active" onclick="goHome()">🏠 Inicio / Islas</button>
+            <div style="margin: 20px 0 10px 10px; font-size: 0.7rem; color: #7f8c8d; font-weight: bold;">ACCESO RÁPIDO</div>
+            <button class="nav-btn" onclick="loadTest('simulacro-ine-modulo-a.html')">📄 Módulo A</button>
+            <button class="nav-btn" onclick="loadTest('simulacro-ine-modulo-b.html')">🔢 Módulo B</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <button id="backToIsland" class="back-btn" onclick="goHome()">← Volver al Panel</button>
+        
+        <div id="dashboardHome" class="dashboard-home">
+            <div class="welcome-header">
+                <h1>Bienvenido, Licenciado</h1>
+            </div>
+
+            <div class="island-section" id="island1">
+                <div class="island-header" onclick="toggleIsland('island1')">
+                    <div class="island-title">🏝️ Nivel 1: Principiante</div>
+                    <span>▼</span>
+                </div>
+                <div class="island-content">
+                    <div class="grid-islas">
+                        <div class="card-test" onclick="loadTest('simulacro-ine-modulo-a.html')">
+                            <span class="icon">📚</span>
+                            <h3>Módulo A</h3>
+                            <span>Lectura / Redacción</span>
+                        </div>
+                        <div class="card-test" onclick="loadTest('simulacro-ine-modulo-b.html')">
+                            <span class="icon">📐</span>
+                            <h3>Módulo B</h3>
+                            <span>Matemáticas</span>
+                        </div>
+                        <div class="card-test" onclick="loadTest('simulacro-ine-modulo-c.html')">
+                            <span class="icon">⚖️</span>
+                            <h3>Módulo C</h3>
+                            <span>Derecho Electoral</span>
+                        </div>
+                        <div class="card-test" onclick="loadTest('simulacro-ine-modulo-d.html')">
+                            <span class="icon">🗳️</span>
+                            <h3>Módulo D</h3>
+                            <span>Conocimientos INE</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="island-section" id="island2">
+                <div class="island-header" onclick="toggleIsland('island2')">
+                    <div class="island-title">⚡ Nivel 2: Intermedio</div>
+                    <span>▼</span>
+                </div>
+                <div class="island-content">
+                    <div class="grid-islas">
+                        <div class="card-test" onclick="loadTest('simulacro-ine-modulo-e.html')">
+                            <span class="icon">🛡️</span>
+                            <h3>Módulo E</h3>
+                            <span>Fiscalización</span>
+                        </div>
+                        <div class="card-test" onclick="loadTest('simulacro-ine-modulo-f.html')">
+                            <span class="icon">📝</span>
+                            <h3>Módulo F</h3>
+                            <span>Administración</span>
+                        </div>
+                        <div class="card-test" onclick="loadTest('simulacro-ine-modulo-g.html')">
+                            <span class="icon">📊</span>
+                            <h3>Módulo G</h3>
+                            <span>Estadística</span>
+                        </div>
+                        <div class="card-test" onclick="loadTest('simulacro-ine-modulo-h.html')">
+                            <span class="icon">🔍</span>
+                            <h3>Módulo H</h3>
+                            <span>Auditoría</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="island-section" id="island3">
+                <div class="island-header" onclick="toggleIsland('island3')">
+                    <div class="island-title">🚀 Nivel 3: Avanzado</div>
+                    <span>▼</span>
+                </div>
+                <div class="island-content">
+                    <div class="grid-islas">
+                        <div class="card-test" onclick="loadTest('simulacro-ine-modulo-i.html')">
+                            <span class="icon">📋</span>
+                            <h3>Módulo I</h3>
+                            <span>Logística</span>
+                        </div>
+                        <div class="card-test" onclick="loadTest('simulacro-ine-modulo-j.html')">
+                            <span class="icon">🖥️</span>
+                            <h3>Módulo J</h3>
+                            <span>Sistemas</span>
+                        </div>
+                        <div class="card-test" onclick="loadTest('simulacro-ine-modulo-k.html')">
+                            <span class="icon">🤝</span>
+                            <h3>Módulo K</h3>
+                            <span>Participación</span>
+                        </div>
+                        <div class="card-test" onclick="loadTest('simulacro-ine-modulo-l.html')">
+                            <span class="icon">🌎</span>
+                            <h3>Módulo L</h3>
+                            <span>Geografía Elec.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="island-section" id="island4">
+                <div class="island-header" onclick="toggleIsland('island4')">
+                    <div class="island-title">🏆 Nivel 4: Experto</div>
+                    <span>▼</span>
+                </div>
+                <div class="island-content">
+                    <div class="grid-islas">
+                        <div class="card-test" onclick="loadTest('simulacro-ine-modulo-m.html')">
+                            <span class="icon">📜</span>
+                            <h3>Módulo M</h3>
+                            <span>Jurisprudencia</span>
+                        </div>
+                        <div class="card-test" onclick="loadTest('simulacro-ine-modulo-n.html')">
+                            <span class="icon">🔦</span>
+                            <h3>Módulo N</h3>
+                            <span>Transparencia</span>
+                        </div>
+                        <div class="card-test" onclick="loadTest('simulacro-ine-modulo-o.html')">
+                            <span class="icon">💎</span>
+                            <h3>Módulo O</h3>
+                            <span>Ética SPEN</span>
+                        </div>
+                        <div class="card-test" onclick="loadTest('simulacro-ine-modulo-p.html')">
+                            <span class="icon">🎯</span>
+                            <h3>Módulo P</h3>
+                            <span>Simulacro Final</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <iframe id="testFrame" src=""></iframe>
+    </div>
+
+    <script>
+        const home = document.getElementById('dashboardHome');
+        const frame = document.getElementById('testFrame');
+        const backBtn = document.getElementById('backToIsland');
+
+        function toggleIsland(id) {
+            const island = document.getElementById(id);
+            island.classList.toggle('active');
+        }
+
+        function loadTest(url) {
+            home.style.display = 'none';
+            frame.style.display = 'block';
+            backBtn.style.display = 'block';
+            frame.src = url;
+        }
+
+        function goHome() {
+            home.style.display = 'block';
+            frame.style.display = 'none';
+            backBtn.style.display = 'none';
+            frame.src = "";
+        }
+    </script>
+</body>
+</html>

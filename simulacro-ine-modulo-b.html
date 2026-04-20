@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulacro INE – Módulo B Matemáticas</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f0f4ff; color: #222; min-height: 100vh; }
+  .header { background: linear-gradient(135deg, #1565c0, #1e88e5); color: white; padding: 18px 24px; display: flex; align-items: center; gap: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+  .header-logo { font-size: 1.8rem; }
+  .header h1 { font-size: 1.1rem; font-weight: 700; }
+  .header p { font-size: 0.8rem; opacity: 0.85; margin-top: 2px; }
+  .header-right { margin-left: auto; text-align: right; }
+  .timer { font-size: 1.4rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .timer.warning { color: #ffe082; }
+  .timer.danger { color: #ff6b6b; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.5} }
+  .progress-wrap { background: #bbdefb; height: 5px; }
+  .progress-bar { height: 5px; background: #fff; transition: width 0.4s; }
+  .main { max-width: 760px; margin: 0 auto; padding: 20px 16px 90px; }
+  .start-screen { background: white; border-radius: 16px; padding: 36px; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-top: 30px; }
+  .start-screen h2 { font-size: 1.5rem; color: #1565c0; margin-bottom: 10px; }
+  .info-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin: 20px 0; }
+  .info-card { background: #e3f2fd; border-radius: 12px; padding: 14px; }
+  .info-card .num { font-size: 1.7rem; font-weight: 800; color: #1565c0; }
+  .info-card .lbl { font-size: 0.78rem; color: #666; margin-top: 2px; }
+  .topic-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 16px 0; text-align: left; }
+  .topic-pill { background: #e3f2fd; border-radius: 8px; padding: 8px 12px; font-size: 0.82rem; color: #1565c0; display: flex; justify-content: space-between; }
+  .topic-pill .cnt { font-weight: 800; }
+  .question-card { background: white; border-radius: 14px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.07); margin-bottom: 16px; }
+  .q-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .q-badge { font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; }
+  .q-num { color: #aaa; font-size: 0.82rem; }
+  .passage { background: #f5f5f5; border-left: 4px solid #1e88e5; padding: 14px; border-radius: 0 8px 8px 0; margin-bottom: 16px; font-size: 0.9rem; line-height: 1.7; }
+  .passage-label { font-size: 0.72rem; font-weight: 700; color: #1565c0; text-transform: uppercase; margin-bottom: 6px; }
+  .question-text { font-size: 0.97rem; font-weight: 600; line-height: 1.5; margin-bottom: 18px; }
+  .options { display: flex; flex-direction: column; gap: 9px; }
+  .option { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border: 2px solid #e0e0e0; border-radius: 10px; cursor: pointer; transition: all 0.18s; font-size: 0.9rem; line-height: 1.4; }
+  .option:hover:not(.disabled) { border-color: #1e88e5; background: #e3f2fd33; }
+  .option.selected { border-color: #1e88e5; background: #e3f2fd55; }
+  .option.correct { border-color: #4caf50; background: #e8f5e9; }
+  .option.incorrect { border-color: #f44336; background: #ffebee; }
+  .option.disabled { cursor: default; }
+  .option-letter { width: 26px; height: 26px; border-radius: 50%; background: #eee; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.78rem; flex-shrink: 0; }
+  .option.selected .option-letter { background: #1e88e5; color: white; }
+  .option.correct .option-letter { background: #4caf50; color: white; }
+  .option.incorrect .option-letter { background: #f44336; color: white; }
+  .explanation { margin-top: 14px; padding: 12px 14px; background: #e8f4fd; border-radius: 10px; border-left: 4px solid #1e88e5; font-size: 0.85rem; line-height: 1.6; display: none; }
+  .explanation.show { display: block; }
+  .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #e0e0e0; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; gap: 10px; box-shadow: 0 -2px 10px rgba(0,0,0,0.06); }
+  .nav-info { font-size: 0.82rem; color: #888; }
+  .nav-info span { color: #1565c0; font-weight: 700; }
+  .btn { padding: 11px 22px; border-radius: 10px; border: none; font-size: 0.9rem; font-weight: 700; cursor: pointer; transition: all 0.18s; }
+  .btn-primary { background: linear-gradient(135deg,#1565c0,#1e88e5); color: white; }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-secondary { background: #f0f0f0; color: #555; }
+  .btn-secondary:hover { background: #e0e0e0; }
+  .btn-lg { padding: 15px 36px; font-size: 1rem; border-radius: 12px; }
+  .results-screen { background: white; border-radius: 16px; padding: 36px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-top: 20px; text-align: center; }
+  .score-circle { width: 130px; height: 130px; border-radius: 50%; margin: 0 auto 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 2rem; font-weight: 900; color: white; }
+  .score-sub { font-size: 0.72rem; font-weight: 500; opacity: 0.85; }
+  .score-good { background: linear-gradient(135deg,#43a047,#66bb6a); }
+  .score-mid { background: linear-gradient(135deg,#f57c00,#ffa726); }
+  .score-low { background: linear-gradient(135deg,#c62828,#ef5350); }
+  .stats-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin: 20px 0; }
+  .stat-card { background: #f9f9f9; border-radius: 10px; padding: 14px; }
+  .stat-card .n { font-size: 1.5rem; font-weight: 800; }
+  .stat-card .l { font-size: 0.75rem; color: #888; margin-top: 2px; }
+  .stat-correct .n { color: #43a047; }
+  .stat-wrong .n { color: #e53935; }
+  .stat-skip .n { color: #888; }
+  .area-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 0.85rem; }
+  .area-name { flex: 1; color: #444; }
+  .area-bar-wrap { flex: 2; background: #eee; border-radius: 4px; height: 7px; }
+  .area-bar { height: 7px; border-radius: 4px; }
+  .area-pct { width: 34px; text-align: right; font-weight: 700; font-size: 0.82rem; }
+  .weak-banner { background: linear-gradient(135deg,#e65100,#ff8f00); color: white; border-radius: 12px; padding: 14px 18px; margin: 16px 0; text-align: left; }
+  .weak-banner h4 { margin-bottom: 6px; }
+  .weak-banner p { font-size: 0.83rem; opacity: 0.9; margin-bottom: 8px; }
+  .weak-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .weak-tag { background: rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 9px; font-size: 0.78rem; font-weight: 700; }
+  .hidden { display: none !important; }
+  @media(max-width:500px){ .info-grid,.stats-grid{grid-template-columns:1fr 1fr} .topic-grid{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-logo">🔢</div>
+  <div>
+    <h1>Simulacro INE – Módulo B</h1>
+    <p>Competencia matemática · Diagnóstico</p>
+  </div>
+  <div class="header-right">
+    <div class="timer" id="timer">45:00</div>
+    <div style="font-size:0.68rem;opacity:0.7;margin-top:2px">tiempo restante</div>
+  </div>
+</div>
+<div class="progress-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+<div class="main">
+  <div class="start-screen" id="startScreen">
+    <h2>🔢 Módulo B — Matemáticas</h2>
+    <p style="background:#fff3e0;border-radius:10px;padding:10px;color:#e65100;font-weight:600;margin-bottom:14px">🎯 Modo diagnóstico — Al terminar verás qué temas dominas y cuáles reforzar.</p>
+    <div class="info-grid">
+      <div class="info-card"><div class="num">30</div><div class="lbl">Preguntas</div></div>
+      <div class="info-card"><div class="num">45</div><div class="lbl">Minutos</div></div>
+      <div class="info-card"><div class="num">6</div><div class="lbl">Subáreas</div></div>
+    </div>
+    <div class="topic-grid">
+      <div class="topic-pill"><span>1.1 Teoría de conjuntos</span><span class="cnt">5</span></div>
+      <div class="topic-pill"><span>1.2 Aritmética</span><span class="cnt">5</span></div>
+      <div class="topic-pill"><span>1.3 Álgebra</span><span class="cnt">7</span></div>
+      <div class="topic-pill"><span>1.4 Probabilidad</span><span class="cnt">4</span></div>
+      <div class="topic-pill"><span>1.5 Estadística</span><span class="cnt">6</span></div>
+      <div class="topic-pill"><span>1.6 Gráficos y tablas</span><span class="cnt">3</span></div>
+    </div>
+    <button class="btn btn-primary btn-lg" onclick="startExam()">Comenzar diagnóstico</button>
+  </div>
+  <div id="examScreen" class="hidden"></div>
+  <div id="resultsScreen" class="hidden"></div>
+</div>
+<div class="nav-bar hidden" id="navBar">
+  <div class="nav-info">Pregunta <span id="navCurrent">1</span> de <span id="navTotal">30</span></div>
+  <div style="display:flex;gap:8px">
+    <button class="btn btn-secondary" id="btnPrev" onclick="prevQ()">← Anterior</button>
+    <button class="btn btn-primary" id="btnNext" onclick="nextQ()">Siguiente →</button>
+  </div>
+</div>
+<script>
+const Q=[
+  {sa:"1.1",sal:"Teoría de conjuntos",p:"En una casilla electoral: 30 tomaron el curso A, 25 tomaron el curso B, 10 tomaron ambos. Total: 50 funcionarios.",pt:"Capacitación de funcionarios",q:"¿Cuántos funcionarios tomaron al menos uno de los dos cursos?",o:["45","55","35","40"],c:0,ex:"Fórmula de unión: |A∪B| = |A|+|B|−|A∩B| = 30+25−10 = 45."},
+  {sa:"1.1",sal:"Teoría de conjuntos",p:null,pt:null,q:"Si A = {1,2,3,4,5} y B = {3,4,5,6,7}, ¿cuál es A ∩ B?",o:["{1,2,3,4,5,6,7}","{3,4,5}","{1,2,6,7}","{1,2}"],c:1,ex:"La intersección contiene los elementos en AMBOS conjuntos: {3,4,5}."},
+  {sa:"1.1",sal:"Teoría de conjuntos",p:"U = {1,2,3,4,5,6,7,8,9,10}  |  A = {2,4,6,8,10}",pt:"Conjunto universal",q:"¿Cuál es el complemento de A?",o:["{2,4,6,8,10}","{1,3,5,7,9,10}","{1,3,5,7,9}","{}"],c:2,ex:"Complemento = U − A = todos los elementos del universo que NO están en A = {1,3,5,7,9}."},
+  {sa:"1.1",sal:"Teoría de conjuntos",p:null,pt:null,q:"¿Cuántos subconjuntos tiene el conjunto {a, b, c}?",o:["3","6","8","9"],c:2,ex:"Un conjunto con n elementos tiene 2ⁿ subconjuntos. Con n=3: 2³ = 8."},
+  {sa:"1.1",sal:"Teoría de conjuntos",p:"En una junta distrital: 40 personas hablan español, 15 hablan inglés, 5 hablan ambos.",pt:"Idiomas en la junta",q:"¿Cuántas personas hablan SOLO español?",o:["40","35","25","30"],c:1,ex:"Solo español = Total español − ambos = 40−5 = 35."},
+  {sa:"1.2",sal:"Aritmética",p:null,pt:null,q:"El candidato A obtuvo 3,450 votos y el B obtuvo 2,870. ¿Cuántos votos más obtuvo A?",o:["580","520","680","480"],c:0,ex:"3,450 − 2,870 = 580 votos de diferencia."},
+  {sa:"1.2",sal:"Aritmética",p:null,pt:null,q:"Si el 35% de 200 boletas son nulas, ¿cuántas boletas son válidas?",o:["70","140","130","165"],c:2,ex:"Nulas: 35%×200 = 70. Válidas: 200−70 = 130."},
+  {sa:"1.2",sal:"Aritmética",p:null,pt:null,q:"Una urna tiene 3/5 de votos para el partido A. Si hay 500 votos en total, ¿cuántos obtuvo A?",o:["250","300","350","200"],c:1,ex:"3/5 × 500 = 300 votos."},
+  {sa:"1.2",sal:"Aritmética",p:null,pt:null,q:"4 funcionarios atienden a 120 ciudadanos por hora. ¿Cuántos atienden 6 funcionarios en el mismo tiempo?",o:["150","160","180","200"],c:2,ex:"Regla de tres: x = (6×120)/4 = 180 ciudadanos."},
+  {sa:"1.2",sal:"Aritmética",p:null,pt:null,q:"Se gastó $1,200 en materiales y se aumenta el presupuesto un 25%. ¿Cuál es el nuevo monto?",o:["$1,400","$1,450","$1,500","$1,300"],c:2,ex:"Aumento: 25%×$1,200 = $300. Nuevo: $1,200+$300 = $1,500."},
+  {sa:"1.3",sal:"Álgebra",p:null,pt:null,q:"Resuelve: 3x + 7 = 22",o:["x = 4","x = 5","x = 3","x = 6"],c:1,ex:"3x = 22−7 = 15 → x = 15/3 = 5."},
+  {sa:"1.3",sal:"Álgebra",p:null,pt:null,q:"Si f(x) = 2x² − 3, ¿cuánto vale f(3)?",o:["12","15","9","18"],c:1,ex:"f(3) = 2(9)−3 = 18−3 = 15."},
+  {sa:"1.3",sal:"Álgebra",p:null,pt:null,q:"Resuelve el sistema: x + y = 10  |  x − y = 4",o:["x=6, y=4","x=7, y=3","x=8, y=2","x=5, y=5"],c:1,ex:"Sumando: 2x=14 → x=7. Sustituyendo: y=3."},
+  {sa:"1.3",sal:"Álgebra",p:null,pt:null,q:"Simplifica: (x² − 9) / (x − 3)",o:["x − 3","x + 3","x² + 3","x"],c:1,ex:"x²−9 = (x+3)(x−3). Al dividir entre (x−3): resultado = x+3."},
+  {sa:"1.3",sal:"Álgebra",p:null,pt:null,q:"¿Cuál es el valor de x en: 2x − 4 > 8?",o:["x > 2","x > 4","x > 6","x > 8"],c:2,ex:"2x > 12 → x > 6."},
+  {sa:"1.3",sal:"Álgebra",p:null,pt:null,q:"El doble de un número más 5 es igual a 21. ¿Cuál es el número?",o:["7","8","9","6"],c:1,ex:"2n+5=21 → 2n=16 → n=8."},
+  {sa:"1.3",sal:"Álgebra",p:null,pt:null,q:"Si 5x = 3y y x = 6, ¿cuánto vale y?",o:["8","9","10","12"],c:2,ex:"5(6)=3y → 30=3y → y=10."},
+  {sa:"1.4",sal:"Probabilidad",p:"Una urna contiene 4 bolillas rojas, 3 azules y 3 verdes.",pt:"Urna de colores",q:"¿Cuál es la probabilidad de sacar una bolilla azul al azar?",o:["1/3","3/10","1/4","2/5"],c:1,ex:"Total: 10 bolillas. Azules: 3. P = 3/10."},
+  {sa:"1.4",sal:"Probabilidad",p:null,pt:null,q:"Al lanzar un dado de 6 caras, ¿cuál es la probabilidad de obtener un número par?",o:["1/6","1/3","1/2","2/3"],c:2,ex:"Pares: {2,4,6} = 3 casos. P = 3/6 = 1/2."},
+  {sa:"1.4",sal:"Probabilidad",p:"En una bolsa hay 5 papeletas ganadoras y 15 no ganadoras.",pt:"Sorteo",q:"¿Cuál es la probabilidad de NO sacar una papeleta ganadora?",o:["1/4","3/4","1/5","4/5"],c:1,ex:"P(no ganadora) = 15/20 = 3/4."},
+  {sa:"1.4",sal:"Probabilidad",p:null,pt:null,q:"¿De cuántas formas se puede elegir un presidente y un secretario de entre 5 candidatos?",o:["10","15","20","25"],c:2,ex:"Permutación P(5,2) = 5×4 = 20 (el orden importa)."},
+  {sa:"1.5",sal:"Estadística",p:"Calificaciones de 7 funcionarios: 6, 8, 7, 9, 8, 10, 8",pt:"Examen de funcionarios",q:"¿Cuál es la moda?",o:["7","8","9","10"],c:1,ex:"La moda es el valor que más se repite: 8 aparece 3 veces."},
+  {sa:"1.5",sal:"Estadística",p:"Calificaciones de 7 funcionarios: 6, 8, 7, 9, 8, 10, 8",pt:"Examen de funcionarios",q:"¿Cuál es la mediana?",o:["7","8","9","8.5"],c:1,ex:"Ordenados: 6,7,8,8,8,9,10. El valor central (posición 4) es 8."},
+  {sa:"1.5",sal:"Estadística",p:"Votos de 5 partidos: 120, 85, 200, 95, 150",pt:"Resultados electorales",q:"¿Cuál es el promedio (media aritmética)?",o:["120","130","125","140"],c:1,ex:"Suma: 650. Media: 650/5 = 130."},
+  {sa:"1.5",sal:"Estadística",p:"Votos de 5 partidos: 120, 85, 200, 95, 150",pt:"Resultados electorales",q:"¿Cuál es el rango (amplitud) de estos datos?",o:["105","115","95","125"],c:1,ex:"Rango = máximo − mínimo = 200−85 = 115."},
+  {sa:"1.5",sal:"Estadística",p:null,pt:null,q:"En un grupo de 10 personas la edad promedio es 30 años. Se agrega una persona de 40 años. ¿Cuál es el nuevo promedio?",o:["31","32","33","35"],c:0,ex:"Suma original: 300. Nueva suma: 340. Promedio: 340/11 ≈ 31 años."},
+  {sa:"1.5",sal:"Estadística",p:null,pt:null,q:"¿Qué medida de tendencia central es la más afectada por valores extremos?",o:["Mediana","Moda","Media aritmética","Rango"],c:2,ex:"La media suma todos los valores, por lo que un dato muy alto o bajo la desplaza notablemente. La mediana y la moda son más resistentes."},
+  {sa:"1.6",sal:"Gráficos y tablas",p:"Participación electoral por distrito:\n• Distrito 1: 3,200 votantes\n• Distrito 2: 4,100 votantes\n• Distrito 3: 2,800 votantes\n• Distrito 4: 3,900 votantes",pt:"Tabla distrital",q:"¿Cuál es el total de votantes en los 4 distritos?",o:["13,000","14,000","13,800","14,200"],c:1,ex:"3,200+4,100+2,800+3,900 = 14,000."},
+  {sa:"1.6",sal:"Gráficos y tablas",p:"Participación electoral por distrito:\n• Distrito 1: 3,200 votantes\n• Distrito 2: 4,100 votantes\n• Distrito 3: 2,800 votantes\n• Distrito 4: 3,900 votantes",pt:"Tabla distrital",q:"¿Qué porcentaje del total (14,000) representa el Distrito 2?",o:["28%","29%","30%","31%"],c:1,ex:"(4,100/14,000)×100 = 29.3% ≈ 29%."},
+  {sa:"1.6",sal:"Gráficos y tablas",p:"Preferencias electorales:\n• Partido A: 40%\n• Partido B: 30%\n• Partido C: 20%\n• Otros: 10%\nTotal: 5,000 votos.",pt:"Gráfica de preferencias",q:"¿Cuántos votos obtuvo el Partido C?",o:["800","900","1,000","1,200"],c:2,ex:"20% de 5,000 = 0.20×5,000 = 1,000 votos."}
+];
+
+const TIME_LIMIT=45*60;
+let answers,revealed,current,timerInterval,secondsLeft;
+const SS={
+  "1.1":{bg:"#e8eaf6",color:"#3949ab",icon:"🔵"},
+  "1.2":{bg:"#e0f2f1",color:"#00796b",icon:"🟢"},
+  "1.3":{bg:"#fce4ec",color:"#c2185b",icon:"🔴"},
+  "1.4":{bg:"#fff3e0",color:"#e65100",icon:"🟠"},
+  "1.5":{bg:"#f3e5f5",color:"#7b1fa2",icon:"🟣"},
+  "1.6":{bg:"#e1f5fe",color:"#0277bd",icon:"🔷"}
+};
+
+function startExam(){
+  answers=new Array(Q.length).fill(null);
+  revealed=new Array(Q.length).fill(false);
+  current=0;
+  document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('examScreen').classList.remove('hidden');
+  document.getElementById('navBar').classList.remove('hidden');
+  renderQuestion(0);
+  startTimer();
+}
+
+function renderQuestion(idx){
+  current=idx;
+  const q=Q[idx],sc=SS[q.sa]||{bg:"#e3f2fd",color:"#1565c0",icon:"📊"};
+  const isR=revealed[idx],sel=answers[idx];
+  let ph='';
+  if(q.p) ph=`<div class="passage"><div class="passage-label">📊 ${q.pt}</div>${q.p.replace(/\n/g,'<br>')}</div>`;
+  const L=['A','B','C','D'];
+  const opts=q.o.map((o,i)=>{
+    let cls='option';
+    if(isR){cls+=' disabled';if(i===q.c)cls+=' correct';else if(i===sel&&i!==q.c)cls+=' incorrect';}
+    else if(i===sel)cls+=' selected';
+    return `<div class="${cls}" onclick="sel(${idx},${i})"><div class="option-letter">${L[i]}</div><div>${o}</div></div>`;
+  }).join('');
+  const ri=isR?(sel===q.c?'✅ Correcto':sel===null?'⏭️ Sin responder':'❌ Incorrecto'):'';
+  document.getElementById('examScreen').innerHTML=`
+    <div class="question-card">
+      <div class="q-meta"><span class="q-badge" style="background:${sc.bg};color:${sc.color}">${sc.icon} ${q.sal}</span><span class="q-num">${idx+1}/${Q.length}</span></div>
+      ${ph}
+      <div class="question-text">${q.q}</div>
+      <div class="options">${opts}</div>
+      <div class="explanation ${isR?'show':''}"><strong>${ri} — Solución:</strong> ${q.ex}</div>
+    </div>
+    ${!isR&&answers[idx]!==null?`<div style="text-align:center;margin-bottom:10px"><button class="btn btn-secondary" onclick="rev(${idx})">Ver solución</button></div>`:''}
+  `;
+  document.getElementById('progressBar').style.width=((idx+1)/Q.length*100)+'%';
+  document.getElementById('navCurrent').textContent=idx+1;
+  document.getElementById('navTotal').textContent=Q.length;
+  document.getElementById('btnPrev').disabled=idx===0;
+  document.getElementById('btnNext').textContent=idx===Q.length-1?'Ver diagnóstico 🏁':'Siguiente →';
+}
+
+function sel(qi,oi){if(revealed[qi])return;answers[qi]=oi;renderQuestion(qi);}
+function rev(idx){revealed[idx]=true;renderQuestion(idx);}
+function nextQ(){if(current<Q.length-1)renderQuestion(current+1);else showResults();}
+function prevQ(){if(current>0)renderQuestion(current-1);}
+
+function startTimer(){
+  secondsLeft=TIME_LIMIT;
+  timerInterval=setInterval(()=>{
+    secondsLeft--;
+    const m=Math.floor(secondsLeft/60).toString().padStart(2,'0'),s=(secondsLeft%60).toString().padStart(2,'0');
+    const el=document.getElementById('timer');
+    el.textContent=`${m}:${s}`;
+    el.className='timer'+(secondsLeft<300?' danger':secondsLeft<600?' warning':'');
+    if(secondsLeft<=0){clearInterval(timerInterval);showResults();}
+  },1000);
+}
+
+function showResults(){
+  clearInterval(timerInterval);
+  document.getElementById('examScreen').classList.add('hidden');
+  document.getElementById('navBar').classList.add('hidden');
+  const total=Q.length,answered=answers.filter(a=>a!==null).length;
+  const correct=answers.filter((a,i)=>a===Q[i].c).length;
+  const wrong=answered-correct,skipped=total-answered,pct=Math.round(correct/total*100);
+  const subs={};
+  Q.forEach((q,i)=>{
+    if(!subs[q.sa])subs[q.sa]={label:q.sal,total:0,correct:0};
+    subs[q.sa].total++;
+    if(answers[i]===q.c)subs[q.sa].correct++;
+  });
+  const weak=Object.entries(subs).filter(([,s])=>s.correct/s.total<0.6).map(([,s])=>s.label);
+  const cc=pct>=70?'score-good':pct>=50?'score-mid':'score-low';
+  const msg=pct>=80?'¡Excelente! Tienes buena base matemática.':pct>=60?'Resultado moderado. Hay temas por reforzar.':'Diagnóstico listo. Prioriza los temas marcados en rojo.';
+  const rows=Object.entries(subs).map(([k,s])=>{
+    const p=Math.round(s.correct/s.total*100),sc=SS[k]||{};
+    const icon=p>=80?'✅':p>=60?'⚠️':'❌';
+    const bc=p>=60?'linear-gradient(90deg,#1565c0,#1e88e5)':'linear-gradient(90deg,#c62828,#ef5350)';
+    return `<div class="area-row"><div class="area-name">${icon} ${s.label}</div><div class="area-bar-wrap"><div class="area-bar" style="width:${p}%;background:${bc}"></div></div><div class="area-pct" style="color:${p>=60?'#1565c0':'#c62828'}">${p}%</div></div>`;
+  }).join('');
+  const wb=weak.length?`<div class="weak-banner"><h4>🎯 Estudia esto primero:</h4><p>Menos del 60% en estas subáreas. Priorízalas esta semana.</p><div class="weak-tags">${weak.map(t=>`<span class="weak-tag">📌 ${t}</span>`).join('')}</div></div>`:
+    `<div style="background:#e8f5e9;border-radius:10px;padding:14px;margin:14px 0;color:#2e7d32;font-weight:600">✅ ¡Dominas todas las subáreas!</div>`;
+  const tu=TIME_LIMIT-secondsLeft,tm=Math.floor(tu/60),ts=tu%60;
+  document.getElementById('resultsScreen').innerHTML=`
+    <div class="results-screen">
+      <div style="background:#e3f2fd;border-radius:10px;padding:9px 14px;margin-bottom:18px;font-size:0.82rem;color:#1565c0;font-weight:600">📋 DIAGNÓSTICO MÓDULO B — ${new Date().toLocaleDateString('es-MX')}</div>
+      <div class="score-circle ${cc}">${pct}%<div class="score-sub">${correct}/${total}</div></div>
+      <h2 style="margin-bottom:8px">${msg}</h2>
+      <p style="margin-bottom:20px">Tiempo: ${tm}m ${ts}s · Respondidas: ${answered}/${total}</p>
+      <div class="stats-grid">
+        <div class="stat-card stat-correct"><div class="n">${correct}</div><div class="l">✅ Correctas</div></div>
+        <div class="stat-card stat-wrong"><div class="n">${wrong}</div><div class="l">❌ Incorrectas</div></div>
+        <div class="stat-card stat-skip"><div class="n">${skipped}</div><div class="l">⏭️ Saltadas</div></div>
+      </div>
+      ${wb}
+      <div style="text-align:left;margin-bottom:24px"><h3 style="font-size:0.9rem;font-weight:700;color:#444;margin-bottom:10px">Desempeño por subárea</h3>${rows}</div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-primary btn-lg" onclick="reviewExam()">Revisar con soluciones</button>
+        <button class="btn btn-secondary btn-lg" onclick="location.reload()">Reiniciar</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('resultsScreen').classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+
+function reviewExam(){
+  document.getElementById('resultsScreen').classList.add('hidden');
+  document.getElementById('examScreen').classList.remove('hidden');
+  document.getElementById('navBar').classList.remove('hidden');
+  revealed=revealed.map(()=>true);
+  renderQuestion(0);
+  window.scrollTo(0,0);
+}
+</script>
+</body>
+</html>

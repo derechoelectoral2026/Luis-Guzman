@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulacro INE – Módulo A</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f5f5f5; color: #222; min-height: 100vh; }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, #c2185b, #e91e8c);
+    color: white;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .header-logo { font-size: 2rem; }
+  .header h1 { font-size: 1.2rem; font-weight: 700; }
+  .header p { font-size: 0.85rem; opacity: 0.85; margin-top: 2px; }
+  .header-right { margin-left: auto; text-align: right; }
+  .timer {
+    font-size: 1.5rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+  .timer.warning { color: #ffe082; }
+  .timer.danger { color: #ff6b6b; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+  /* PROGRESS */
+  .progress-bar-wrap { background: #eee; height: 6px; }
+  .progress-bar { height: 6px; background: linear-gradient(90deg,#c2185b,#e91e8c); transition: width 0.4s; }
+
+  /* MAIN */
+  .main { max-width: 800px; margin: 0 auto; padding: 24px 16px 80px; }
+
+  /* START SCREEN */
+  .start-screen {
+    background: white;
+    border-radius: 16px;
+    padding: 40px;
+    text-align: center;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    margin-top: 40px;
+  }
+  .start-screen h2 { font-size: 1.6rem; color: #c2185b; margin-bottom: 12px; }
+  .start-screen p { color: #555; margin-bottom: 8px; line-height: 1.6; }
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin: 28px 0;
+  }
+  .info-card {
+    background: #fce4ec;
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+  }
+  .info-card .num { font-size: 1.8rem; font-weight: 800; color: #c2185b; }
+  .info-card .lbl { font-size: 0.8rem; color: #666; margin-top: 4px; }
+
+  /* LOADING */
+  .loading-screen {
+    background: white;
+    border-radius: 16px;
+    padding: 60px 40px;
+    text-align: center;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    margin-top: 40px;
+  }
+  .spinner {
+    width: 56px; height: 56px;
+    border: 5px solid #fce4ec;
+    border-top-color: #c2185b;
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+    margin: 0 auto 20px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-screen h3 { color: #c2185b; font-size: 1.2rem; }
+  .loading-screen p { color: #888; margin-top: 8px; font-size: 0.9rem; }
+  .loading-dots::after {
+    content: '';
+    animation: dots 1.5s infinite;
+  }
+  @keyframes dots {
+    0%{content:''} 33%{content:'.'} 66%{content:'..'} 100%{content:'...'}
+  }
+
+  /* QUESTION CARD */
+  .question-card {
+    background: white;
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+  }
+  .q-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .q-badge {
+    background: #fce4ec;
+    color: #c2185b;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .q-num { color: #aaa; font-size: 0.85rem; }
+
+  .passage {
+    background: #fafafa;
+    border-left: 4px solid #e91e8c;
+    padding: 16px;
+    border-radius: 0 8px 8px 0;
+    margin-bottom: 20px;
+    font-size: 0.92rem;
+    line-height: 1.7;
+    color: #333;
+  }
+  .passage-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #c2185b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+
+  .question-text {
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.55;
+    margin-bottom: 20px;
+    color: #1a1a1a;
+  }
+
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.93rem;
+    line-height: 1.4;
+  }
+  .option:hover:not(.disabled) { border-color: #e91e8c; background: #fce4ec22; }
+  .option.selected { border-color: #e91e8c; background: #fce4ec44; }
+  .option.correct { border-color: #4caf50; background: #e8f5e9; }
+  .option.incorrect { border-color: #f44336; background: #ffebee; }
+  .option.disabled { cursor: default; }
+  .option-letter {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: #eee;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.8rem;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .option.selected .option-letter { background: #e91e8c; color: white; }
+  .option.correct .option-letter { background: #4caf50; color: white; }
+  .option.incorrect .option-letter { background: #f44336; color: white; }
+
+  .explanation {
+    margin-top: 16px;
+    padding: 14px 16px;
+    background: #f3f8ff;
+    border-radius: 10px;
+    border-left: 4px solid #2196f3;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: #333;
+    display: none;
+  }
+  .explanation.show { display: block; }
+  .explanation strong { color: #1565c0; }
+
+  /* NAV */
+  .nav-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: white;
+    border-top: 1px solid #eee;
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.07);
+  }
+  .nav-info { font-size: 0.85rem; color: #888; }
+  .nav-info span { color: #c2185b; font-weight: 700; }
+
+  /* BUTTONS */
+  .btn {
+    padding: 12px 24px;
+    border-radius: 10px;
+    border: none;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #c2185b, #e91e8c);
+    color: white;
+  }
+  .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn-secondary {
+    background: #f5f5f5;
+    color: #555;
+  }
+  .btn-secondary:hover { background: #eee; }
+  .btn-lg { padding: 16px 40px; font-size: 1.05rem; border-radius: 12px; }
+
+  /* RESULTS */
+  .results-screen {
+    background: white;
+    border-radius: 16px;
+    padding: 40px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    margin-top: 20px;
+    text-align: center;
+  }
+  .score-circle {
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    margin: 0 auto 24px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: white;
+  }
+  .score-circle .score-sub { font-size: 0.75rem; font-weight: 500; opacity: 0.85; }
+  .score-good { background: linear-gradient(135deg,#43a047,#66bb6a); }
+  .score-mid { background: linear-gradient(135deg,#f57c00,#ffa726); }
+  .score-low { background: linear-gradient(135deg,#c62828,#ef5350); }
+
+  .results-screen h2 { font-size: 1.4rem; margin-bottom: 8px; }
+  .results-screen p { color: #666; margin-bottom: 24px; line-height: 1.6; }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3,1fr);
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .stat-card { background: #f9f9f9; border-radius: 12px; padding: 16px; }
+  .stat-card .n { font-size: 1.6rem; font-weight: 800; }
+  .stat-card .l { font-size: 0.78rem; color: #888; margin-top: 2px; }
+  .stat-correct .n { color: #43a047; }
+  .stat-wrong .n { color: #e53935; }
+  .stat-skip .n { color: #888; }
+
+  .area-breakdown { text-align: left; margin-bottom: 28px; }
+  .area-breakdown h3 { font-size: 0.95rem; font-weight: 700; color: #444; margin-bottom: 12px; }
+  .area-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; font-size: 0.88rem; }
+  .area-name { flex: 1; color: #555; }
+  .area-bar-wrap { flex: 2; background: #eee; border-radius: 4px; height: 8px; }
+  .area-bar { height: 8px; border-radius: 4px; background: linear-gradient(90deg,#c2185b,#e91e8c); }
+  .area-pct { width: 36px; text-align: right; font-weight: 700; color: #c2185b; font-size: 0.85rem; }
+
+  .hidden { display: none !important; }
+
+  @media (max-width: 500px) {
+    .info-grid, .stats-grid { grid-template-columns: 1fr 1fr; }
+    .question-card { padding: 20px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">📋</div>
+  <div>
+    <h1>Simulacro INE – Módulo A</h1>
+    <p>Comprensión lectora y Redacción indirecta</p>
+  </div>
+  <div class="header-right">
+    <div class="timer" id="timer">60:00</div>
+    <div style="font-size:0.7rem;opacity:0.7;margin-top:2px">tiempo restante</div>
+  </div>
+</div>
+<div class="progress-bar-wrap">
+  <div class="progress-bar" id="progressBar" style="width:0%"></div>
+</div>
+
+<div class="main">
+
+  <!-- START SCREEN -->
+  <div class="start-screen" id="startScreen">
+    <h2>📝 Módulo A — 40 preguntas</h2>
+    <p>La IA generará preguntas originales similares al examen real del INE, con textos de comprensión lectora y ejercicios de redacción indirecta.</p>
+    <div class="info-grid">
+      <div class="info-card"><div class="num">40</div><div class="lbl">Preguntas</div></div>
+      <div class="info-card"><div class="num">60</div><div class="lbl">Minutos</div></div>
+      <div class="info-card"><div class="num">3</div><div class="lbl">Subáreas</div></div>
+    </div>
+    <p style="font-size:0.85rem;color:#888;margin-bottom:28px">
+      📚 Ámbito de estudio (12) &nbsp;|&nbsp; 🎭 Ámbito literario (12) &nbsp;|&nbsp; 🗣️ Participación social (6)<br>
+      ✍️ Redacción estudio (15) &nbsp;|&nbsp; ✍️ Redacción social (15) — <em>apróx. proporcional</em>
+    </p>
+    <button class="btn btn-primary btn-lg" onclick="startExam()">Comenzar simulacro</button>
+  </div>
+
+  <!-- LOADING SCREEN -->
+  <div class="loading-screen hidden" id="loadingScreen">
+    <div class="spinner"></div>
+    <h3>Generando preguntas con IA<span class="loading-dots"></span></h3>
+    <p id="loadingMsg">Preparando textos de comprensión lectora...</p>
+  </div>
+
+  <!-- EXAM SCREEN -->
+  <div id="examScreen" class="hidden"></div>
+
+  <!-- RESULTS SCREEN -->
+  <div id="resultsScreen" class="hidden"></div>
+
+</div>
+
+<!-- NAV BAR -->
+<div class="nav-bar hidden" id="navBar">
+  <div class="nav-info">Pregunta <span id="navCurrent">1</span> de <span id="navTotal">40</span></div>
+  <div style="display:flex;gap:10px">
+    <button class="btn btn-secondary" id="btnPrev" onclick="prevQ()">← Anterior</button>
+    <button class="btn btn-primary" id="btnNext" onclick="nextQ()">Siguiente →</button>
+  </div>
+</div>
+
+<script>
+const API_URL = "https://api.anthropic.com/v1/messages";
+const TOTAL_Q = 40;
+const TIME_LIMIT = 60 * 60; // seconds
+
+let questions = [];
+let answers = [];
+let revealed = [];
+let current = 0;
+let timerInterval = null;
+let secondsLeft = TIME_LIMIT;
+let examStarted = false;
+
+const loadingMessages = [
+  "Preparando textos de comprensión lectora...",
+  "Creando preguntas de ámbito literario...",
+  "Diseñando ejercicios de redacción indirecta...",
+  "Armando las opciones de respuesta...",
+  "Revisando dificultad y coherencia...",
+  "¡Casi listo!"
+];
+
+async function startExam() {
+  document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('loadingScreen').classList.remove('hidden');
+
+  // Cycle loading messages
+  let msgIdx = 0;
+  const msgEl = document.getElementById('loadingMsg');
+  const msgInterval = setInterval(() => {
+    msgIdx = (msgIdx + 1) % loadingMessages.length;
+    msgEl.textContent = loadingMessages[msgIdx];
+  }, 2500);
+
+  try {
+    questions = await generateQuestions();
+    answers = new Array(questions.length).fill(null);
+    revealed = new Array(questions.length).fill(false);
+    clearInterval(msgInterval);
+    document.getElementById('loadingScreen').classList.add('hidden');
+    document.getElementById('examScreen').classList.remove('hidden');
+    document.getElementById('navBar').classList.remove('hidden');
+    renderQuestion(0);
+    startTimer();
+  } catch (e) {
+    clearInterval(msgInterval);
+    document.getElementById('loadingScreen').innerHTML = `
+      <div style="font-size:2rem;margin-bottom:16px">⚠️</div>
+      <h3 style="color:#c62828">Error al generar preguntas</h3>
+      <p style="margin:12px 0">${e.message}</p>
+      <button class="btn btn-primary" onclick="location.reload()">Reintentar</button>
+    `;
+  }
+}
+
+async function generateQuestions() {
+  const prompt = `Eres un experto en el diseño de exámenes del INE (Instituto Nacional Electoral) de México.
+
+Genera exactamente 40 preguntas de opción múltiple (4 opciones cada una) para el Módulo A del examen de Vocalia de Organización Electoral Local y Distrital.
+
+El módulo tiene estas subáreas y distribución:
+- 1.1 Comprensión lectora: Ámbito de estudio (12 preguntas) — textos académicos/informativos
+- 1.2 Comprensión lectora: Ámbito literario (12 preguntas) — textos narrativos, poéticos, dramáticos
+- 1.3 Comprensión lectora: Ámbito de participación social (6 preguntas) — textos periodísticos, publicitarios, oficiales
+- 2.1 Redacción indirecta: Ámbito de estudio (5 preguntas) — coherencia, cohesión, organización de textos académicos
+- 2.2 Redacción indirecta: Ámbito de participación social (5 preguntas) — selección de textos coherentes para comunicación social
+
+IMPORTANTE sobre las preguntas de comprensión lectora:
+- DEBES incluir un pasaje de texto (150-250 palabras) para las preguntas de comprensión
+- Cada pasaje puede tener 2-4 preguntas asociadas
+- Las preguntas deben referirse explícitamente al pasaje
+
+IMPORTANTE sobre las preguntas de redacción indirecta:
+- Presentan un fragmento de texto con una oración faltante o mal redactada
+- El alumno debe elegir la opción que mejor complete o mejore el texto
+
+Responde SOLO con un JSON válido (sin markdown, sin explicaciones), con esta estructura exacta:
+{
+  "questions": [
+    {
+      "id": 1,
+      "subarea": "1.1",
+      "subareaLabel": "Comprensión lectora – Ámbito de estudio",
+      "passage": "Texto del pasaje aquí (solo para preguntas de comprensión, null para redacción)",
+      "passageTitle": "Título del pasaje (o null)",
+      "question": "Pregunta aquí",
+      "options": ["A) opción", "B) opción", "C) opción", "D) opción"],
+      "correct": 0,
+      "explanation": "Explicación breve de por qué es correcta esa respuesta"
+    }
+  ]
+}
+
+El campo "correct" es el índice (0-3) de la opción correcta.
+Genera preguntas de dificultad media-alta, realistas al examen del INE.`;
+
+  const response = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 8000,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.error?.message || `HTTP ${response.status}`);
+  }
+
+  const data = await response.json();
+  const text = data.content.map(b => b.text || '').join('');
+  const clean = text.replace(/```json|```/g, '').trim();
+  const parsed = JSON.parse(clean);
+  return parsed.questions;
+}
+
+function renderQuestion(idx) {
+  current = idx;
+  const q = questions[idx];
+  updateProgress();
+  updateNav();
+
+  const subareaColors = {
+    '1.1': '#e91e8c', '1.2': '#9c27b0', '1.3': '#2196f3',
+    '2.1': '#ff9800', '2.2': '#009688'
+  };
+  const color = subareaColors[q.subarea] || '#c2185b';
+
+  let passageHTML = '';
+  if (q.passage) {
+    passageHTML = `
+      <div class="passage">
+        <div class="passage-label">📄 ${q.passageTitle || 'Texto'}</div>
+        ${q.passage}
+      </div>
+    `;
+  }
+
+  const isRevealed = revealed[idx];
+  const selectedIdx = answers[idx];
+
+  const optionsHTML = q.options.map((opt, i) => {
+    let cls = 'option';
+    if (isRevealed) {
+      cls += ' disabled';
+      if (i === q.correct) cls += ' correct';
+      else if (i === selectedIdx && i !== q.correct) cls += ' incorrect';
+    } else if (i === selectedIdx) {
+      cls += ' selected';
+    }
+    const letters = ['A','B','C','D'];
+    return `<div class="${cls}" onclick="selectOption(${idx},${i})">
+      <div class="option-letter">${letters[i]}</div>
+      <div>${opt.replace(/^[A-D]\)\s*/,'')}</div>
+    </div>`;
+  }).join('');
+
+  const explClass = isRevealed ? 'explanation show' : 'explanation';
+  const resultIcon = isRevealed
+    ? (selectedIdx === q.correct ? '✅ Correcto' : selectedIdx === null ? '⏭️ Sin responder' : '❌ Incorrecto')
+    : '';
+
+  document.getElementById('examScreen').innerHTML = `
+    <div class="question-card">
+      <div class="q-meta">
+        <span class="q-badge" style="background:${color}22;color:${color}">${q.subareaLabel}</span>
+        <span class="q-num">Pregunta ${idx+1} / ${questions.length}</span>
+      </div>
+      ${passageHTML}
+      <div class="question-text">${q.question}</div>
+      <div class="options">${optionsHTML}</div>
+      <div class="${explClass}">
+        <strong>${resultIcon} — Explicación:</strong> ${q.explanation}
+      </div>
+    </div>
+    ${!isRevealed && answers[idx] !== null ? `<div style="text-align:center;margin-bottom:12px">
+      <button class="btn btn-secondary" onclick="revealAnswer(${idx})">Ver respuesta correcta</button>
+    </div>` : ''}
+  `;
+}
+
+function selectOption(qIdx, optIdx) {
+  if (revealed[qIdx]) return;
+  answers[qIdx] = optIdx;
+  renderQuestion(qIdx);
+}
+
+function revealAnswer(idx) {
+  revealed[idx] = true;
+  renderQuestion(idx);
+}
+
+function nextQ() {
+  if (current < questions.length - 1) renderQuestion(current + 1);
+  else showResults();
+}
+
+function prevQ() {
+  if (current > 0) renderQuestion(current - 1);
+}
+
+function updateProgress() {
+  const pct = ((current + 1) / questions.length) * 100;
+  document.getElementById('progressBar').style.width = pct + '%';
+}
+
+function updateNav() {
+  document.getElementById('navCurrent').textContent = current + 1;
+  document.getElementById('navTotal').textContent = questions.length;
+  document.getElementById('btnPrev').disabled = current === 0;
+  const isLast = current === questions.length - 1;
+  document.getElementById('btnNext').textContent = isLast ? 'Ver resultados 🏁' : 'Siguiente →';
+}
+
+function startTimer() {
+  secondsLeft = TIME_LIMIT;
+  timerInterval = setInterval(() => {
+    secondsLeft--;
+    const m = Math.floor(secondsLeft / 60).toString().padStart(2,'0');
+    const s = (secondsLeft % 60).toString().padStart(2,'0');
+    const el = document.getElementById('timer');
+    el.textContent = `${m}:${s}`;
+    el.className = 'timer' + (secondsLeft < 300 ? ' danger' : secondsLeft < 600 ? ' warning' : '');
+    if (secondsLeft <= 0) { clearInterval(timerInterval); showResults(); }
+  }, 1000);
+}
+
+function showResults() {
+  clearInterval(timerInterval);
+  document.getElementById('examScreen').classList.add('hidden');
+  document.getElementById('navBar').classList.add('hidden');
+
+  const total = questions.length;
+  const answered = answers.filter(a => a !== null).length;
+  const correct = answers.filter((a, i) => a === questions[i].correct).length;
+  const wrong = answered - correct;
+  const skipped = total - answered;
+  const pct = Math.round((correct / total) * 100);
+
+  // Per-subarea stats
+  const subareas = {};
+  questions.forEach((q, i) => {
+    if (!subareas[q.subareaLabel]) subareas[q.subareaLabel] = { total: 0, correct: 0 };
+    subareas[q.subareaLabel].total++;
+    if (answers[i] === q.correct) subareas[q.subareaLabel].correct++;
+  });
+
+  const circleClass = pct >= 70 ? 'score-good' : pct >= 50 ? 'score-mid' : 'score-low';
+  const msg = pct >= 80 ? '¡Excelente desempeño! Sigue así.' :
+    pct >= 60 ? 'Buen avance. Repasa los temas donde fallaste.' :
+    'Hay áreas que reforzar. ¡No te rindas!';
+
+  const areaRows = Object.entries(subareas).map(([name, s]) => {
+    const p = Math.round((s.correct / s.total) * 100);
+    return `<div class="area-row">
+      <div class="area-name">${name}</div>
+      <div class="area-bar-wrap"><div class="area-bar" style="width:${p}%"></div></div>
+      <div class="area-pct">${p}%</div>
+    </div>`;
+  }).join('');
+
+  const timeUsed = TIME_LIMIT - secondsLeft;
+  const tm = Math.floor(timeUsed/60), ts = timeUsed%60;
+
+  document.getElementById('resultsScreen').innerHTML = `
+    <div class="results-screen">
+      <div class="score-circle ${circleClass}">
+        ${pct}%
+        <div class="score-sub">${correct}/${total}</div>
+      </div>
+      <h2>${msg}</h2>
+      <p>Tiempo utilizado: ${tm}m ${ts}s</p>
+      <div class="stats-grid">
+        <div class="stat-card stat-correct"><div class="n">${correct}</div><div class="l">Correctas</div></div>
+        <div class="stat-card stat-wrong"><div class="n">${wrong}</div><div class="l">Incorrectas</div></div>
+        <div class="stat-card stat-skip"><div class="n">${skipped}</div><div class="l">Sin responder</div></div>
+      </div>
+      <div class="area-breakdown">
+        <h3>Desempeño por subárea</h3>
+        ${areaRows}
+      </div>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-primary btn-lg" onclick="reviewExam()">Revisar respuestas</button>
+        <button class="btn btn-secondary btn-lg" onclick="location.reload()">Nuevo simulacro</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('resultsScreen').classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+
+function reviewExam() {
+  document.getElementById('resultsScreen').classList.add('hidden');
+  document.getElementById('examScreen').classList.remove('hidden');
+  document.getElementById('navBar').classList.remove('hidden');
+  // Reveal all
+  revealed = revealed.map(() => true);
+  renderQuestion(0);
+  window.scrollTo(0,0);
+}
+</script>
+</body>
+</html>

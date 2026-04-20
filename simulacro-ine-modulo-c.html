@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulacro INE – Módulo C</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f5f0ff; color: #222; min-height: 100vh; }
+  .header { background: linear-gradient(135deg, #6a1b9a, #ab47bc); color: white; padding: 18px 24px; display: flex; align-items: center; gap: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+  .header-logo { font-size: 1.8rem; }
+  .header h1 { font-size: 1.1rem; font-weight: 700; }
+  .header p { font-size: 0.8rem; opacity: 0.85; margin-top: 2px; }
+  .header-right { margin-left: auto; text-align: right; }
+  .timer { font-size: 1.4rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .timer.warning { color: #ffe082; }
+  .timer.danger { color: #ff6b6b; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.5} }
+  .progress-wrap { background: #e1bee7; height: 5px; }
+  .progress-bar { height: 5px; background: #fff; transition: width 0.4s; }
+  .main { max-width: 760px; margin: 0 auto; padding: 20px 16px 90px; }
+
+  .start-screen { background: white; border-radius: 16px; padding: 36px; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-top: 30px; }
+  .start-screen h2 { font-size: 1.5rem; color: #6a1b9a; margin-bottom: 10px; }
+  .info-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin: 20px 0; }
+  .info-card { background: #f3e5f5; border-radius: 12px; padding: 14px; }
+  .info-card .num { font-size: 1.7rem; font-weight: 800; color: #6a1b9a; }
+  .info-card .lbl { font-size: 0.78rem; color: #666; margin-top: 2px; }
+  .topic-section { text-align: left; margin: 16px 0; }
+  .topic-section-title { font-size: 0.78rem; font-weight: 800; color: #6a1b9a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; padding-left: 4px; }
+  .topic-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 12px; }
+  .topic-pill { background: #f3e5f5; border-radius: 8px; padding: 7px 11px; font-size: 0.8rem; color: #6a1b9a; display: flex; justify-content: space-between; }
+  .topic-pill .cnt { font-weight: 800; }
+
+  .question-card { background: white; border-radius: 14px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.07); margin-bottom: 16px; }
+  .q-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .q-badge { font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; }
+  .q-num { color: #aaa; font-size: 0.82rem; }
+  .passage { background: #f5f0ff; border-left: 4px solid #ab47bc; padding: 14px; border-radius: 0 8px 8px 0; margin-bottom: 16px; font-size: 0.9rem; line-height: 1.7; }
+  .passage-label { font-size: 0.72rem; font-weight: 700; color: #6a1b9a; text-transform: uppercase; margin-bottom: 6px; }
+  .question-text { font-size: 0.97rem; font-weight: 600; line-height: 1.5; margin-bottom: 18px; }
+  .options { display: flex; flex-direction: column; gap: 9px; }
+  .option { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border: 2px solid #e0e0e0; border-radius: 10px; cursor: pointer; transition: all 0.18s; font-size: 0.9rem; line-height: 1.4; }
+  .option:hover:not(.disabled) { border-color: #ab47bc; background: #f3e5f533; }
+  .option.selected { border-color: #ab47bc; background: #f3e5f555; }
+  .option.correct { border-color: #4caf50; background: #e8f5e9; }
+  .option.incorrect { border-color: #f44336; background: #ffebee; }
+  .option.disabled { cursor: default; }
+  .option-letter { width: 26px; height: 26px; border-radius: 50%; background: #eee; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.78rem; flex-shrink: 0; }
+  .option.selected .option-letter { background: #ab47bc; color: white; }
+  .option.correct .option-letter { background: #4caf50; color: white; }
+  .option.incorrect .option-letter { background: #f44336; color: white; }
+  .explanation { margin-top: 14px; padding: 12px 14px; background: #f5f0ff; border-radius: 10px; border-left: 4px solid #ab47bc; font-size: 0.85rem; line-height: 1.6; display: none; }
+  .explanation.show { display: block; }
+
+  .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #e0e0e0; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; gap: 10px; box-shadow: 0 -2px 10px rgba(0,0,0,0.06); }
+  .nav-info { font-size: 0.82rem; color: #888; }
+  .nav-info span { color: #6a1b9a; font-weight: 700; }
+  .btn { padding: 11px 22px; border-radius: 10px; border: none; font-size: 0.9rem; font-weight: 700; cursor: pointer; transition: all 0.18s; }
+  .btn-primary { background: linear-gradient(135deg,#6a1b9a,#ab47bc); color: white; }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-secondary { background: #f0f0f0; color: #555; }
+  .btn-secondary:hover { background: #e0e0e0; }
+  .btn-lg { padding: 15px 36px; font-size: 1rem; border-radius: 12px; }
+
+  .results-screen { background: white; border-radius: 16px; padding: 36px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-top: 20px; text-align: center; }
+  .score-circle { width: 130px; height: 130px; border-radius: 50%; margin: 0 auto 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 2rem; font-weight: 900; color: white; }
+  .score-sub { font-size: 0.72rem; font-weight: 500; opacity: 0.85; }
+  .score-good { background: linear-gradient(135deg,#43a047,#66bb6a); }
+  .score-mid { background: linear-gradient(135deg,#f57c00,#ffa726); }
+  .score-low { background: linear-gradient(135deg,#c62828,#ef5350); }
+  .stats-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin: 20px 0; }
+  .stat-card { background: #f9f9f9; border-radius: 10px; padding: 14px; }
+  .stat-card .n { font-size: 1.5rem; font-weight: 800; }
+  .stat-card .l { font-size: 0.75rem; color: #888; margin-top: 2px; }
+  .stat-correct .n { color: #43a047; }
+  .stat-wrong .n { color: #e53935; }
+  .stat-skip .n { color: #888; }
+  .area-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 0.85rem; }
+  .area-name { flex: 1; color: #444; }
+  .area-bar-wrap { flex: 2; background: #eee; border-radius: 4px; height: 7px; }
+  .area-bar { height: 7px; border-radius: 4px; }
+  .area-pct { width: 34px; text-align: right; font-weight: 700; font-size: 0.82rem; }
+  .weak-banner { background: linear-gradient(135deg,#6a1b9a,#ab47bc); color: white; border-radius: 12px; padding: 14px 18px; margin: 16px 0; text-align: left; }
+  .weak-banner h4 { margin-bottom: 6px; }
+  .weak-banner p { font-size: 0.83rem; opacity: 0.9; margin-bottom: 8px; }
+  .weak-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .weak-tag { background: rgba(255,255,255,0.25); border-radius: 6px; padding: 3px 9px; font-size: 0.78rem; font-weight: 700; }
+  .hidden { display: none !important; }
+  @media(max-width:500px){ .info-grid,.stats-grid{grid-template-columns:1fr 1fr} .topic-grid{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-logo">🏛️</div>
+  <div>
+    <h1>Simulacro INE – Módulo C</h1>
+    <p>Conocimiento cívico-electoral · Diagnóstico</p>
+  </div>
+  <div class="header-right">
+    <div class="timer" id="timer">50:00</div>
+    <div style="font-size:0.68rem;opacity:0.7;margin-top:2px">tiempo restante</div>
+  </div>
+</div>
+<div class="progress-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+<div class="main">
+  <div class="start-screen" id="startScreen">
+    <h2>🏛️ Módulo C — Conocimiento cívico-electoral</h2>
+    <p style="background:#f3e5f5;border-radius:10px;padding:10px;color:#6a1b9a;font-weight:600;margin-bottom:14px">🎯 Modo diagnóstico — Al terminar verás qué temas dominas y cuáles reforzar.</p>
+    <div class="info-grid">
+      <div class="info-card"><div class="num">40</div><div class="lbl">Preguntas</div></div>
+      <div class="info-card"><div class="num">50</div><div class="lbl">Minutos</div></div>
+      <div class="info-card"><div class="num">3</div><div class="lbl">Áreas</div></div>
+    </div>
+    <div class="topic-section">
+      <div class="topic-section-title">📜 1. Sistema Político Mexicano (19 preguntas)</div>
+      <div class="topic-grid">
+        <div class="topic-pill"><span>1.1 Modelo constitucional</span><span class="cnt">5</span></div>
+        <div class="topic-pill"><span>1.2 Poder Judicial</span><span class="cnt">6</span></div>
+        <div class="topic-pill"><span>1.3 Ciudadanía</span><span class="cnt">5</span></div>
+        <div class="topic-pill"><span>1.4 Sistema de partidos</span><span class="cnt">3</span></div>
+      </div>
+      <div class="topic-section-title">🗳️ 2. Sistema Electoral Mexicano (13 preguntas)</div>
+      <div class="topic-grid">
+        <div class="topic-pill"><span>2.1 Principios electorales</span><span class="cnt">1</span></div>
+        <div class="topic-pill"><span>2.2 Tipos de sistemas</span><span class="cnt">1</span></div>
+        <div class="topic-pill"><span>2.3 Autoridades electorales</span><span class="cnt">3</span></div>
+        <div class="topic-pill"><span>2.4 Delitos electorales</span><span class="cnt">1</span></div>
+        <div class="topic-pill"><span>2.5 Candidaturas independientes</span><span class="cnt">1</span></div>
+        <div class="topic-pill"><span>2.6 Proceso Electoral Federal</span><span class="cnt">6</span></div>
+      </div>
+      <div class="topic-section-title">🏢 3. Instituto Nacional Electoral (8 preguntas)</div>
+      <div class="topic-grid">
+        <div class="topic-pill"><span>3.1 Conocimientos del INE</span><span class="cnt">1</span></div>
+        <div class="topic-pill"><span>3.2 Órganos del INE</span><span class="cnt">5</span></div>
+        <div class="topic-pill"><span>3.3 Servicio Profesional Electoral</span><span class="cnt">2</span></div>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-lg" onclick="startExam()">Comenzar diagnóstico</button>
+  </div>
+  <div id="examScreen" class="hidden"></div>
+  <div id="resultsScreen" class="hidden"></div>
+</div>
+<div class="nav-bar hidden" id="navBar">
+  <div class="nav-info">Pregunta <span id="navCurrent">1</span> de <span id="navTotal">40</span></div>
+  <div style="display:flex;gap:8px">
+    <button class="btn btn-secondary" id="btnPrev" onclick="prevQ()">← Anterior</button>
+    <button class="btn btn-primary" id="btnNext" onclick="nextQ()">Siguiente →</button>
+  </div>
+</div>
+<script>
+const Q=[
+  // === 1.1 MODELO CONSTITUCIONAL (5) ===
+  {sa:"1.1",sal:"Modelo constitucional",p:null,pt:null,
+   q:"¿Cuántos artículos contiene la Constitución Política de los Estados Unidos Mexicanos vigente (considerando los transitorios)?",
+   o:["136 artículos","137 artículos","136 artículos permanentes y numerosos transitorios","200 artículos"],
+   c:2,ex:"La CPEUM tiene 136 artículos permanentes más artículos transitorios que se han ido agregando con las reformas."},
+  {sa:"1.1",sal:"Modelo constitucional",p:null,pt:null,
+   q:"¿Cuál es la forma de gobierno establecida en el Artículo 40 de la Constitución Mexicana?",
+   o:["Monarquía constitucional","República representativa, democrática, laica y federal","República parlamentaria","Estado unitario centralizado"],
+   c:1,ex:"El Art. 40 establece que México es una República representativa, democrática, laica y federal, compuesta por estados libres y soberanos."},
+  {sa:"1.1",sal:"Modelo constitucional",p:null,pt:null,
+   q:"¿Qué artículo constitucional establece la división de poderes en México?",
+   o:["Artículo 39","Artículo 49","Artículo 41","Artículo 73"],
+   c:1,ex:"El Artículo 49 establece que el Supremo Poder de la Federación se divide para su ejercicio en Legislativo, Ejecutivo y Judicial."},
+  {sa:"1.1",sal:"Modelo constitucional",p:null,pt:null,
+   q:"¿Cuántas Cámaras integran el Poder Legislativo Federal en México?",
+   o:["Una (Cámara de Diputados)","Dos (Diputados y Senadores)","Tres (Diputados, Senadores y Asamblea)","Una (Senado)"],
+   c:1,ex:"El Poder Legislativo Federal se deposita en un Congreso General dividido en Cámara de Diputados y Cámara de Senadores (Art. 50 CPEUM)."},
+  {sa:"1.1",sal:"Modelo constitucional",p:null,pt:null,
+   q:"¿Cuántos senadores integran el Senado de la República?",
+   o:["64","96","128","100"],
+   c:2,ex:"El Senado se integra por 128 senadores: 64 de mayoría relativa (2 por estado + CDMX), 32 de primera minoría y 32 por representación proporcional."},
+
+  // === 1.2 PODER JUDICIAL (6) ===
+  {sa:"1.2",sal:"Poder Judicial",p:null,pt:null,
+   q:"¿Cuál es el máximo tribunal del Poder Judicial de la Federación en México?",
+   o:["Tribunal Electoral del Poder Judicial de la Federación","Suprema Corte de Justicia de la Nación","Consejo de la Judicatura Federal","Tribunales Colegiados de Circuito"],
+   c:1,ex:"La Suprema Corte de Justicia de la Nación (SCJN) es el máximo órgano del Poder Judicial Federal (Art. 94 CPEUM)."},
+  {sa:"1.2",sal:"Poder Judicial",p:null,pt:null,
+   q:"¿Cuántos ministros integran la Suprema Corte de Justicia de la Nación?",
+   o:["7","9","11","13"],
+   c:2,ex:"La SCJN se compone de 11 ministros (Art. 94 CPEUM), incluyendo al Presidente, y funcionan en Pleno o en dos Salas."},
+  {sa:"1.2",sal:"Poder Judicial",p:null,pt:null,
+   q:"¿Qué órgano del Poder Judicial es la máxima autoridad en materia electoral?",
+   o:["SCJN","Instituto Nacional Electoral","Tribunal Electoral del Poder Judicial de la Federación","Fiscalía Especializada en Delitos Electorales"],
+   c:2,ex:"El TEPJF es la máxima autoridad jurisdiccional en materia electoral, con excepción de las acciones de inconstitucionalidad que resuelve la SCJN."},
+  {sa:"1.2",sal:"Poder Judicial",p:null,pt:null,
+   q:"¿Cuántas Salas Regionales tiene el Tribunal Electoral del Poder Judicial de la Federación?",
+   o:["5","6","7","8"],
+   c:2,ex:"El TEPJF cuenta con una Sala Superior y 7 Salas Regionales (incluyendo la Sala Regional Especializada creada en 2014)."},
+  {sa:"1.2",sal:"Poder Judicial",p:null,pt:null,
+   q:"¿Qué recurso se interpone ante el TEPJF para impugnar actos del INE?",
+   o:["Juicio de Amparo","Recurso de Apelación","Juicio de Revisión Constitucional Electoral","Juicio para la Protección de los Derechos Político-Electorales del Ciudadano"],
+   c:1,ex:"El Recurso de Apelación (RAP) es el medio de impugnación para combatir actos y resoluciones del INE ante el TEPJF."},
+  {sa:"1.2",sal:"Poder Judicial",p:null,pt:null,
+   q:"¿Cuál es el período del encargo de los magistrados de la Sala Superior del TEPJF?",
+   o:["6 años","9 años","12 años sin reelección","4 años con posibilidad de reelección"],
+   c:1,ex:"Los magistrados de la Sala Superior duran 9 años en su encargo, sin posibilidad de reelección (Art. 99 CPEUM)."},
+
+  // === 1.3 CIUDADANÍA (5) ===
+  {sa:"1.3",sal:"Ciudadanía",p:null,pt:null,
+   q:"¿A qué edad se adquiere la ciudadanía mexicana según la Constitución?",
+   o:["16 años","18 años","21 años","15 años"],
+   c:1,ex:"El Artículo 34 CPEUM establece que son ciudadanos los mexicanos que hayan cumplido 18 años y tengan un modo honesto de vivir."},
+  {sa:"1.3",sal:"Ciudadanía",p:null,pt:null,
+   q:"¿Cuál es una prerrogativa exclusiva de los ciudadanos mexicanos?",
+   o:["Recibir educación pública","Votar en las elecciones populares","Tener un trabajo","Recibir atención médica del IMSS"],
+   c:1,ex:"Votar en las elecciones populares es una prerrogativa ciudadana establecida en el Art. 35 CPEUM, exclusiva de quienes tienen ciudadanía."},
+  {sa:"1.3",sal:"Ciudadanía",p:null,pt:null,
+   q:"¿Cuál de los siguientes es un derecho político de los ciudadanos según el Artículo 35 constitucional?",
+   o:["Derecho a la salud","Ser votado para cargos de elección popular","Derecho a la vivienda","Derecho al trabajo"],
+   c:1,ex:"El Art. 35 establece como prerrogativas: votar, ser votado, asociarse política y libremente, tomar las armas, ejercer la consulta popular y la iniciativa ciudadana."},
+  {sa:"1.3",sal:"Ciudadanía",p:null,pt:null,
+   q:"¿Cuál es una obligación de los ciudadanos mexicanos según la Constitución?",
+   o:["Hablar el idioma español","Inscribirse en el Registro Federal de Electores","Pertenecer a un partido político","Pagar impuestos estatales"],
+   c:1,ex:"El Art. 36 CPEUM establece que es obligación del ciudadano inscribirse en el Registro Federal de Electores (hoy Padrón Electoral)."},
+  {sa:"1.3",sal:"Ciudadanía",p:null,pt:null,
+   q:"¿En qué caso se suspenden los derechos o prerrogativas del ciudadano?",
+   o:["Por no votar en una elección","Por ser condenado por delito que merezca pena corporal","Por vivir en el extranjero","Por no pagar impuestos"],
+   c:1,ex:"El Art. 38 CPEUM establece que los derechos ciudadanos se suspenden entre otros casos por estar sujeto a proceso criminal por delito que merezca pena corporal."},
+
+  // === 1.4 SISTEMA DE PARTIDOS EN MÉXICO (3) ===
+  {sa:"1.4",sal:"Sistema de partidos en México",p:null,pt:null,
+   q:"¿Qué porcentaje mínimo de la votación válida emitida debe obtener un partido político para mantener su registro?",
+   o:["2%","3%","4%","5%"],
+   c:1,ex:"Según la LGPP, un partido político debe obtener al menos el 3% de la votación válida emitida en cualquiera de las elecciones federales para conservar su registro."},
+  {sa:"1.4",sal:"Sistema de partidos en México",p:null,pt:null,
+   q:"¿Cuál es la autoridad encargada de otorgar y cancelar el registro de los partidos políticos nacionales?",
+   o:["Secretaría de Gobernación","Suprema Corte de Justicia","Instituto Nacional Electoral","Tribunal Electoral del PJF"],
+   c:2,ex:"El INE es la autoridad competente para otorgar, mantener y cancelar el registro de los partidos políticos nacionales conforme a la LGPP."},
+  {sa:"1.4",sal:"Sistema de partidos en México",p:null,pt:null,
+   q:"¿Qué son las coaliciones en el sistema de partidos mexicano?",
+   o:["Fusiones definitivas entre dos o más partidos","Acuerdos temporales entre partidos para postular candidatos comunes en una elección","Escisiones dentro de un partido","Agrupaciones políticas nacionales"],
+   c:1,ex:"Las coaliciones son acuerdos entre dos o más partidos para postular los mismos candidatos en una elección determinada, sin fusionarse permanentemente."},
+
+  // === 2.1 PRINCIPIOS DEL SISTEMA ELECTORAL (1) ===
+  {sa:"2.1",sal:"Principios del sistema electoral",p:null,pt:null,
+   q:"¿Cuáles son los principios rectores que rigen la función electoral del INE?",
+   o:["Legalidad, imparcialidad, objetividad, certeza, independencia, máxima publicidad y paridad","Democracia, federalismo, representatividad","Sufragio universal, libre, secreto y directo","Equidad, transparencia y eficiencia"],
+   c:0,ex:"El Art. 41 CPEUM establece que la función electoral se rige por los principios de certeza, legalidad, independencia, imparcialidad, máxima publicidad, objetividad y paridad."},
+
+  // === 2.2 TIPOS DE SISTEMAS ELECTORALES (1) ===
+  {sa:"2.2",sal:"Tipos de sistemas electorales",p:null,pt:null,
+   q:"¿Qué tipo de sistema electoral utiliza México para elegir diputados federales?",
+   o:["Solo mayoría relativa","Solo representación proporcional","Sistema mixto: mayoría relativa y representación proporcional","Sistema de segunda vuelta"],
+   c:2,ex:"México usa un sistema mixto: 300 diputados por mayoría relativa (distritos uninominales) y 200 por representación proporcional (circunscripciones plurinominales). Total: 500 diputados."},
+
+  // === 2.3 AUTORIDADES ELECTORALES (3) ===
+  {sa:"2.3",sal:"Autoridades electorales",p:null,pt:null,
+   q:"¿Cuál es la diferencia principal entre el INE y el TEPJF?",
+   o:["El INE es jurisdiccional y el TEPJF administrativo","El INE es administrativo y el TEPJF es jurisdiccional","Ambos son jurisdiccionales","Ambos son administrativos"],
+   c:1,ex:"El INE es la autoridad administrativa electoral (organiza las elecciones), mientras que el TEPJF es la autoridad jurisdiccional (resuelve controversias y recursos en materia electoral)."},
+  {sa:"2.3",sal:"Autoridades electorales",p:null,pt:null,
+   q:"¿Qué son los Organismos Públicos Locales Electorales (OPLEs)?",
+   o:["Organismos federales que sustituyen al INE en los estados","Órganos electorales de cada entidad federativa que organizan elecciones locales","Dependencias del Poder Ejecutivo Federal","Delegaciones del TEPJF en los estados"],
+   c:1,ex:"Los OPLEs son los institutos electorales de cada entidad federativa, responsables de organizar las elecciones locales (gubernaturas, presidencias municipales, congresos locales)."},
+  {sa:"2.3",sal:"Autoridades electorales",p:null,pt:null,
+   q:"¿Qué es la Fiscalía Especializada en Delitos Electorales (FEDE)?",
+   o:["Un órgano del INE","Una sala del TEPJF","Un órgano de la Fiscalía General de la República para investigar delitos electorales","Un comité del Senado"],
+   c:2,ex:"La FEDE (antes FEPADE) es el órgano de la Fiscalía General de la República especializado en investigar y perseguir los delitos electorales tipificados en el COFIPE y el Código Penal Federal."},
+
+  // === 2.4 DELITOS ELECTORALES (1) ===
+  {sa:"2.4",sal:"Delitos electorales",p:null,pt:null,
+   q:"¿Cuál de las siguientes conductas constituye un delito electoral?",
+   o:["Votar sin conocer a todos los candidatos","Comprar o coacionar el voto","Llegar tarde a la casilla","No participar como funcionario de casilla si no fuiste seleccionado"],
+   c:1,ex:"La compra y coacción del voto está tipificada como delito electoral en el Código Penal Federal (Art. 403). Implica dar dádivas a cambio del voto o amenazar al elector."},
+
+  // === 2.5 CANDIDATURAS INDEPENDIENTES (1) ===
+  {sa:"2.5",sal:"Candidaturas independientes",p:null,pt:null,
+   q:"¿Qué requisito distingue principalmente a las candidaturas independientes de las de partido?",
+   o:["No necesitan registrarse ante el INE","Deben obtener respaldo ciudadano (firmas) equivalente a un porcentaje del padrón electoral","No pueden participar en debates","No reciben financiamiento público"],
+   c:1,ex:"Los candidatos independientes deben acreditar respaldo ciudadano mediante la recolección de firmas de apoyo que representan un porcentaje del listado nominal, según el cargo al que aspiren."},
+
+  // === 2.6 PROCESO ELECTORAL FEDERAL (6) ===
+  {sa:"2.6",sal:"Proceso Electoral Federal",p:null,pt:null,
+   q:"¿Cuándo inicia formalmente el proceso electoral federal ordinario?",
+   o:["El 1° de enero del año de la elección","La primera semana de septiembre del año previo a la elección","El día en que el INE convoca","El 1° de octubre del año previo a la elección"],
+   c:1,ex:"El proceso electoral federal ordinario inicia la primera semana de septiembre del año previo al de la elección, con la sesión del Consejo General del INE (Art. 227 LEGIPE)."},
+  {sa:"2.6",sal:"Proceso Electoral Federal",p:null,pt:null,
+   q:"¿En qué etapa del proceso electoral se realiza la Jornada Electoral?",
+   o:["Etapa de preparación","Etapa de resultados","Jornada electoral es una etapa por sí misma","Etapa de campaña"],
+   c:2,ex:"La Jornada Electoral es la tercera etapa del proceso electoral federal, que ocurre el primer domingo de junio del año de la elección."},
+  {sa:"2.6",sal:"Proceso Electoral Federal",p:null,pt:null,
+   q:"¿Qué es el PREP (Programa de Resultados Electorales Preliminares)?",
+   o:["El padrón electoral actualizado","El sistema que capta y publica los resultados preliminares la noche de la elección","El registro de candidatos","El sistema de designación de funcionarios de casilla"],
+   c:1,ex:"El PREP es el sistema informático del INE que captura y difunde los resultados preliminares la noche de la jornada electoral, a partir de las actas de escrutinio y cómputo de casilla."},
+  {sa:"2.6",sal:"Proceso Electoral Federal",p:null,pt:null,
+   q:"¿Qué son los Cómputos Distritales?",
+   o:["El conteo de votos en cada casilla el día de la elección","La suma oficial de los votos realizada por los Consejos Distritales del INE en los días posteriores a la jornada","El sistema de financiamiento a partidos","El registro de candidatos por distrito"],
+   c:1,ex:"Los Cómputos Distritales son el procedimiento oficial mediante el cual los Consejos Distritales del INE suman y verifican los resultados de todas las casillas de su distrito, generalmente el miércoles posterior a la jornada."},
+  {sa:"2.6",sal:"Proceso Electoral Federal",p:null,pt:null,
+   q:"¿Cuántas circunscripciones plurinominales existen en México para la elección de diputados federales?",
+   o:["3","4","5","6"],
+   c:2,ex:"México se divide en 5 circunscripciones plurinominales para la elección de los 200 diputados de representación proporcional (Art. 53 CPEUM)."},
+  {sa:"2.6",sal:"Proceso Electoral Federal",p:null,pt:null,
+   q:"¿Cuál es el período de campaña para Presidente de la República?",
+   o:["60 días","90 días","60 días naturales","90 días naturales"],
+   c:3,ex:"Las campañas para Presidente de la República duran 90 días naturales. Para senadores 60 días y para diputados federales 45 días (Art. 251 LEGIPE)."},
+
+  // === 3.1 CONOCIMIENTOS FUNDAMENTALES DEL INE (1) ===
+  {sa:"3.1",sal:"Conocimientos fundamentales del INE",p:null,pt:null,
+   q:"¿En qué año se creó el Instituto Nacional Electoral (INE) como sucesor del IFE?",
+   o:["2010","2012","2014","2016"],
+   c:2,ex:"El INE fue creado mediante la reforma político-electoral de 2014, publicada en el DOF el 10 de febrero de 2014, sustituyendo al IFE con mayores atribuciones, incluyendo las elecciones locales."},
+
+  // === 3.2 ÓRGANOS DEL INE (5) ===
+  {sa:"3.2",sal:"Órganos del INE",p:null,pt:null,
+   q:"¿Cuál es el órgano máximo de dirección del INE?",
+   o:["La Presidencia del INE","El Consejo General","La Junta General Ejecutiva","La Secretaría Ejecutiva"],
+   c:1,ex:"El Consejo General es el órgano superior de dirección del INE, integrado por 11 consejeros electorales con derecho a voz y voto (Art. 35 LGIPE)."},
+  {sa:"3.2",sal:"Órganos del INE",p:null,pt:null,
+   q:"¿Cuántos Consejeros Electorales con derecho a voto integran el Consejo General del INE?",
+   o:["7","9","11","13"],
+   c:2,ex:"El Consejo General se integra por 11 Consejeros Electorales (incluyendo el Consejero Presidente), más representantes de partidos y del Congreso con voz pero sin voto."},
+  {sa:"3.2",sal:"Órganos del INE",p:null,pt:null,
+   q:"¿Qué órgano del INE coordina las actividades de los órganos ejecutivos y técnicos a nivel nacional?",
+   o:["Consejo General","Junta General Ejecutiva","Contraloría General","Unidad Técnica de Fiscalización"],
+   c:1,ex:"La Junta General Ejecutiva es presidida por el Consejero Presidente y el Secretario Ejecutivo, y coordina los trabajos de las Direcciones Ejecutivas y Unidades Técnicas del INE."},
+  {sa:"3.2",sal:"Órganos del INE",p:null,pt:null,
+   q:"¿Cómo se denominan los órganos desconcentrados del INE a nivel estatal?",
+   o:["Juntas Locales Ejecutivas y Consejos Locales","Delegaciones Estatales","Coordinaciones Regionales","Subdelegaciones Electorales"],
+   c:0,ex:"En cada entidad federativa el INE cuenta con Juntas Locales Ejecutivas (órganos permanentes de carácter técnico) y Consejos Locales (temporales, durante el proceso electoral)."},
+  {sa:"3.2",sal:"Órganos del INE",p:null,pt:null,
+   q:"¿Cuántos distritos electorales federales uninominales existen en México?",
+   o:["200","240","300","400"],
+   c:2,ex:"El territorio nacional se divide en 300 distritos electorales federales uninominales, en cada uno de los cuales el INE tiene una Junta Distrital Ejecutiva permanente."},
+
+  // === 3.3 SERVICIO PROFESIONAL ELECTORAL NACIONAL (2) ===
+  {sa:"3.3",sal:"Servicio Profesional Electoral Nacional",p:null,pt:null,
+   q:"¿Qué es el Servicio Profesional Electoral Nacional (SPEN)?",
+   o:["El sistema de capacitación para funcionarios de casilla","El sistema de carrera del personal directivo y técnico del INE y los OPLEs","El programa de contratación temporal para el proceso electoral","El registro de candidatos a consejeros electorales"],
+   c:1,ex:"El SPEN es el sistema de carrera que regula el ingreso, formación, evaluación y permanencia del personal directivo, ejecutivo y técnico del INE y de los organismos públicos locales electorales."},
+  {sa:"3.3",sal:"Servicio Profesional Electoral Nacional",p:null,pt:null,
+   q:"¿Qué principio fundamental rige el ingreso al Servicio Profesional Electoral Nacional?",
+   o:["Antigüedad y experiencia previa","Mérito, a través de concursos de oposición","Designación directa por el Consejo General","Recomendación de partidos políticos"],
+   c:1,ex:"El SPEN se rige por el principio de mérito: el ingreso y la promoción se realizan mediante concursos de oposición que evalúan conocimientos, habilidades y aptitudes de los aspirantes."}
+];
+
+const TIME_LIMIT=50*60;
+let answers,revealed,current,timerInterval,secondsLeft;
+const SS={
+  "1.1":{bg:"#e8eaf6",color:"#3949ab",icon:"📜"},
+  "1.2":{bg:"#fce4ec",color:"#c2185b",icon:"⚖️"},
+  "1.3":{bg:"#e0f2f1",color:"#00796b",icon:"🧑‍🤝‍🧑"},
+  "1.4":{bg:"#fff3e0",color:"#e65100",icon:"🏴"},
+  "2.1":{bg:"#f3e5f5",color:"#7b1fa2",icon:"📋"},
+  "2.2":{bg:"#e1f5fe",color:"#0277bd",icon:"🗳️"},
+  "2.3":{bg:"#e8f5e9",color:"#2e7d32",icon:"🏛️"},
+  "2.4":{bg:"#ffebee",color:"#c62828",icon:"🚫"},
+  "2.5":{bg:"#f9fbe7",color:"#558b2f",icon:"👤"},
+  "2.6":{bg:"#e3f2fd",color:"#1565c0",icon:"🗓️"},
+  "3.1":{bg:"#fbe9e7",color:"#bf360c",icon:"🏢"},
+  "3.2":{bg:"#f3e5f5",color:"#6a1b9a",icon:"⚙️"},
+  "3.3":{bg:"#e8eaf6",color:"#283593",icon:"🎓"}
+};
+
+function startExam(){
+  answers=new Array(Q.length).fill(null);
+  revealed=new Array(Q.length).fill(false);
+  current=0;
+  document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('examScreen').classList.remove('hidden');
+  document.getElementById('navBar').classList.remove('hidden');
+  renderQuestion(0);
+  startTimer();
+}
+
+function renderQuestion(idx){
+  current=idx;
+  const q=Q[idx],sc=SS[q.sa]||{bg:"#f3e5f5",color:"#6a1b9a",icon:"📌"};
+  const isR=revealed[idx],sel=answers[idx];
+  let ph='';
+  if(q.p) ph=`<div class="passage"><div class="passage-label">📄 ${q.pt}</div>${q.p.replace(/\n/g,'<br>')}</div>`;
+  const L=['A','B','C','D'];
+  const opts=q.o.map((o,i)=>{
+    let cls='option';
+    if(isR){cls+=' disabled';if(i===q.c)cls+=' correct';else if(i===sel&&i!==q.c)cls+=' incorrect';}
+    else if(i===sel)cls+=' selected';
+    return `<div class="${cls}" onclick="sel(${idx},${i})"><div class="option-letter">${L[i]}</div><div>${o}</div></div>`;
+  }).join('');
+  const ri=isR?(sel===q.c?'✅ Correcto':sel===null?'⏭️ Sin responder':'❌ Incorrecto'):'';
+  document.getElementById('examScreen').innerHTML=`
+    <div class="question-card">
+      <div class="q-meta"><span class="q-badge" style="background:${sc.bg};color:${sc.color}">${sc.icon} ${q.sal}</span><span class="q-num">${idx+1}/${Q.length}</span></div>
+      ${ph}
+      <div class="question-text">${q.q}</div>
+      <div class="options">${opts}</div>
+      <div class="explanation ${isR?'show':''}"><strong>${ri} — Explicación:</strong> ${q.ex}</div>
+    </div>
+    ${!isR&&answers[idx]!==null?`<div style="text-align:center;margin-bottom:10px"><button class="btn btn-secondary" onclick="rev(${idx})">Ver explicación</button></div>`:''}
+  `;
+  document.getElementById('progressBar').style.width=((idx+1)/Q.length*100)+'%';
+  document.getElementById('navCurrent').textContent=idx+1;
+  document.getElementById('navTotal').textContent=Q.length;
+  document.getElementById('btnPrev').disabled=idx===0;
+  document.getElementById('btnNext').textContent=idx===Q.length-1?'Ver diagnóstico 🏁':'Siguiente →';
+}
+
+function sel(qi,oi){if(revealed[qi])return;answers[qi]=oi;renderQuestion(qi);}
+function rev(idx){revealed[idx]=true;renderQuestion(idx);}
+function nextQ(){if(current<Q.length-1)renderQuestion(current+1);else showResults();}
+function prevQ(){if(current>0)renderQuestion(current-1);}
+
+function startTimer(){
+  secondsLeft=TIME_LIMIT;
+  timerInterval=setInterval(()=>{
+    secondsLeft--;
+    const m=Math.floor(secondsLeft/60).toString().padStart(2,'0'),s=(secondsLeft%60).toString().padStart(2,'0');
+    const el=document.getElementById('timer');
+    el.textContent=`${m}:${s}`;
+    el.className='timer'+(secondsLeft<300?' danger':secondsLeft<600?' warning':'');
+    if(secondsLeft<=0){clearInterval(timerInterval);showResults();}
+  },1000);
+}
+
+function showResults(){
+  clearInterval(timerInterval);
+  document.getElementById('examScreen').classList.add('hidden');
+  document.getElementById('navBar').classList.add('hidden');
+  const total=Q.length,answered=answers.filter(a=>a!==null).length;
+  const correct=answers.filter((a,i)=>a===Q[i].c).length;
+  const wrong=answered-correct,skipped=total-answered,pct=Math.round(correct/total*100);
+
+  // Group by área (not subarea) for summary
+  const areas={
+    "Sistema Político Mexicano":{total:0,correct:0},
+    "Sistema Electoral Mexicano":{total:0,correct:0},
+    "Instituto Nacional Electoral":{total:0,correct:0}
+  };
+  const areaMap={"1.1":"Sistema Político Mexicano","1.2":"Sistema Político Mexicano","1.3":"Sistema Político Mexicano","1.4":"Sistema Político Mexicano","2.1":"Sistema Electoral Mexicano","2.2":"Sistema Electoral Mexicano","2.3":"Sistema Electoral Mexicano","2.4":"Sistema Electoral Mexicano","2.5":"Sistema Electoral Mexicano","2.6":"Sistema Electoral Mexicano","3.1":"Instituto Nacional Electoral","3.2":"Instituto Nacional Electoral","3.3":"Instituto Nacional Electoral"};
+
+  const subs={};
+  Q.forEach((q,i)=>{
+    const area=areaMap[q.sa];
+    areas[area].total++;
+    if(answers[i]===q.c)areas[area].correct++;
+    if(!subs[q.sa])subs[q.sa]={label:q.sal,total:0,correct:0};
+    subs[q.sa].total++;
+    if(answers[i]===q.c)subs[q.sa].correct++;
+  });
+
+  const weak=Object.entries(subs).filter(([,s])=>s.correct/s.total<0.6).map(([,s])=>s.label);
+  const cc=pct>=70?'score-good':pct>=50?'score-mid':'score-low';
+  const msg=pct>=80?'¡Excelente! Dominas el conocimiento cívico-electoral.':pct>=60?'Buen avance. Refuerza los temas señalados.':'Diagnóstico listo. Enfócate en los temas marcados esta semana.';
+
+  const rows=Object.entries(areas).map(([name,a])=>{
+    const p=Math.round(a.correct/a.total*100);
+    const icon=p>=80?'✅':p>=60?'⚠️':'❌';
+    const bc=p>=60?'linear-gradient(90deg,#6a1b9a,#ab47bc)':'linear-gradient(90deg,#c62828,#ef5350)';
+    return `<div class="area-row"><div class="area-name">${icon} ${name}</div><div class="area-bar-wrap"><div class="area-bar" style="width:${p}%;background:${bc}"></div></div><div class="area-pct" style="color:${p>=60?'#6a1b9a':'#c62828'}">${p}%</div></div>`;
+  }).join('');
+
+  const wb=weak.length?`<div class="weak-banner"><h4>🎯 Estudia esto primero:</h4><p>Menos del 60% en estas subáreas. Priorízalas esta semana.</p><div class="weak-tags">${weak.map(t=>`<span class="weak-tag">📌 ${t}</span>`).join('')}</div></div>`:
+    `<div style="background:#e8f5e9;border-radius:10px;padding:14px;margin:14px 0;color:#2e7d32;font-weight:600">✅ ¡Dominas todas las áreas!</div>`;
+  const tu=TIME_LIMIT-secondsLeft,tm=Math.floor(tu/60),ts=tu%60;
+
+  document.getElementById('resultsScreen').innerHTML=`
+    <div class="results-screen">
+      <div style="background:#f3e5f5;border-radius:10px;padding:9px 14px;margin-bottom:18px;font-size:0.82rem;color:#6a1b9a;font-weight:600">📋 DIAGNÓSTICO MÓDULO C — ${new Date().toLocaleDateString('es-MX')}</div>
+      <div class="score-circle ${cc}">${pct}%<div class="score-sub">${correct}/${total}</div></div>
+      <h2 style="margin-bottom:8px">${msg}</h2>
+      <p style="margin-bottom:20px">Tiempo: ${tm}m ${ts}s · Respondidas: ${answered}/${total}</p>
+      <div class="stats-grid">
+        <div class="stat-card stat-correct"><div class="n">${correct}</div><div class="l">✅ Correctas</div></div>
+        <div class="stat-card stat-wrong"><div class="n">${wrong}</div><div class="l">❌ Incorrectas</div></div>
+        <div class="stat-card stat-skip"><div class="n">${skipped}</div><div class="l">⏭️ Saltadas</div></div>
+      </div>
+      ${wb}
+      <div style="text-align:left;margin-bottom:24px"><h3 style="font-size:0.9rem;font-weight:700;color:#444;margin-bottom:10px">Desempeño por área</h3>${rows}</div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-primary btn-lg" onclick="reviewExam()">Revisar con explicaciones</button>
+        <button class="btn btn-secondary btn-lg" onclick="location.reload()">Reiniciar</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('resultsScreen').classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+
+function reviewExam(){
+  document.getElementById('resultsScreen').classList.add('hidden');
+  document.getElementById('examScreen').classList.remove('hidden');
+  document.getElementById('navBar').classList.remove('hidden');
+  revealed=revealed.map(()=>true);
+  renderQuestion(0);
+  window.scrollTo(0,0);
+}
+</script>
+</body>
+</html>
